@@ -46,12 +46,31 @@ class ValueIterationAgent(ValueEstimationAgent):
 
         # Write value iteration code here
         "*** YOUR CODE HERE ***"
+        allStates = mdp.getStates()
+        
+        for iter in range(0, iterations+1):
+            valuesIter = self.calcValue(allStates, iter)
+            self.values = valuesIter.copy()
 
-
+    def calcValue(self, allStates, iteration):
+        mdp = self.mdp;
+        
+        valuesK = util.Counter()
+        
+        for state in allStates:
+            if iteration == 0:
+                valuesK[state] = 0
+            else:
+                qvalues = [self.getQValue(state, action) for action in mdp.getPossibleActions(state)]
+                valuesK[state] = max(qvalues) if len(qvalues) > 0 else self.values[state]
+        
+        return valuesK
+            
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
         """
+        # For value iteration, this will return the V(k) when calculating V(k+1).
         return self.values[state]
 
 
@@ -61,7 +80,11 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        mdp = self.mdp
+        gamma = self.discount
+        successors = mdp.getTransitionStatesAndProbs(state, action)
+        
+        return sum([successor[1] * (mdp.getReward(state, action, successor[0]) + gamma * self.getValue(successor[0])) for successor in successors])
 
     def computeActionFromValues(self, state):
         """
@@ -73,7 +96,15 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        mdp = self.mdp
+        actions = mdp.getPossibleActions(state)
+        if len(actions) == 0:
+            return None
+        
+        qvalues = [(action, self.getQValue(state, action)) for action in actions]
+        maxQValue = max(qvalues, key=lambda item: item[1])
+        
+        return maxQValue[0]
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
@@ -83,4 +114,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         return self.computeActionFromValues(state)
 
     def getQValue(self, state, action):
+        # For value iteration, this will return the Q(k) when calculating Q(k+1).
         return self.computeQValueFromValues(state, action)
+    
+       
